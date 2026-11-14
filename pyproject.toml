@@ -1,0 +1,6 @@
+[dependency-groups]
+torch = [
+    "numpy",
+    "torch",
+    "torchvision",
+]
