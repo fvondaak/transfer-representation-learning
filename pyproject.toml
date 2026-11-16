@@ -3,7 +3,6 @@ torch = [
     "numpy",
     "torch",
     "torchvision",
-    "datasets",
     "matplotlib",
-    "medmnist"
+    "kagglehub",
 ]

@@ -6,3 +6,4 @@ uv.lock
 .codex
 *.venv*
 models
+__pycache__
