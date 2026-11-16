@@ -1,0 +1,9 @@
+.vscode
+data
+uv.lock
+.agents
+.aws
+.codex
+*.venv*
+models
+__pycache__
