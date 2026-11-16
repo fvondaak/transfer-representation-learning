@@ -1,88 +1,67 @@
-import os
 from pathlib import Path
 
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset, DataLoader
 import torchvision
 
-from torchvision.datasets import CIFAR10
+ROOT = Path(__file__).resolve().parent.parent
+DATAPATH = ROOT / "data"
 
-from datasets import load_dataset
+class ChestXrayDataset(Dataset):
+    
+    classes = ("NORMAL", "PNEUMONIA")
 
-from medmnist import PathMNIST
+    def __init__(self, root_dir=DATAPATH, transform=None, split="train"):
+        if split not in ("train", "val", "test"):
+            raise ValueError(f"Invalid split {split!r}; expected 'train', 'val', or 'test'.")
 
-dataset = load_dataset("ILSVRC/imagenet-1k")
-
-# ImageNet Dataset used to train the ResNet50 model
-class ImageNetDataset(Dataset):
-    def __init__(self, split, transform = None):
-        self.dataset = dataset[split]
+        self.root_dir = Path(root_dir)
         self.transform = transform
+        self.split = split
+        self.class_to_idx = {name: idx for idx, name in enumerate(self.classes)}
+        dataset_dir = self.root_dir
+        if not (dataset_dir / split).is_dir():
+            dataset_dir = dataset_dir / "chest_xray"
+        split_dir = dataset_dir / split
+        if not split_dir.is_dir():
+            raise FileNotFoundError(f"Dataset split directory not found: {split_dir}")
+
+        self.samples = []
+        for class_name, label in self.class_to_idx.items():
+            class_dir = split_dir / class_name
+            if not class_dir.is_dir():
+                raise FileNotFoundError(f"Dataset class directory not found: {class_dir}")
+            self.samples.extend(
+                (path, label)
+                for path in sorted(class_dir.iterdir())
+                if path.is_file() and path.suffix.lower() in (".jpeg", ".jpg", ".png")
+                and not path.name.startswith(".")
+            )
+        if not self.samples:
+            raise ValueError(f"No images found in {split_dir}")
+        self.image_paths = [path for path, _ in self.samples]
+        self.targets = [label for _, label in self.samples]
 
     def __len__(self):
-        return len(self.dataset)
+        return len(self.image_paths)
 
     def __getitem__(self, idx):
-        image = self.dataset[idx]["image"]
-        label = self.dataset[idx]["label"]
-
-        if self.transform:
+        img_path, label = self.samples[idx]
+        image = torchvision.io.read_image(
+            str(img_path), mode=torchvision.io.ImageReadMode.RGB
+        )
+        if self.transform is not None:
             image = self.transform(image)
-
         return image, label
 
-class PathMNISTDataset(Dataset):
-    def __init__(self, split, transform=None):
-        self.dataset = PathMNIST(split=split, download=True)
-        self.transform = transform
+def get_train_dataloader(batch_size=32, transform=None, shuffle=True):
+    dataset = ChestXrayDataset(split="train", transform=transform)
+    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
-    def __len__(self):
-        return len(self.dataset)
+def get_test_dataloader(batch_size=32, transform=None, shuffle=False):
+    dataset = ChestXrayDataset(split="test", transform=transform)
+    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
-    def __getitem__(self, idx):
-        image, label = self.dataset[idx]
-
-        if self.transform:
-            image = self.transform(image)
-
-        return image, label
-
-def get_train_dataloader(batch_size=32, num_workers=4, transform=None, shuffle=True, dataset_name="imagenet"):
-
-    if dataset_name == "imagenet":
-        train_dataset = ImageNetDataset(split="train", transform=transform)
-    elif dataset_name == "pathmnist":
-        train_dataset = PathMNISTDataset(split="train", transform=transform)
-    else:
-        raise ValueError("Unsupported dataset name")
-
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-
-    return train_loader
-
-def get_test_dataloader(batch_size=32, num_workers=4, transform=None, shuffle=False, dataset_name="imagenet"):
-    "Uses test set from imagenet-1k dataset, does not have labels"
-
-    if dataset_name == "imagenet":
-        test_dataset = ImageNetDataset(split="test", transform=transform)
-    elif dataset_name == "pathmnist":
-        test_dataset = PathMNISTDataset(split="test", transform=transform)
-    else:
-        raise ValueError("Unsupported dataset name")
-
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-
-    return test_loader
-
-def get_val_dataloader(batch_size=32, num_workers=4, transform=None, shuffle=False, dataset_name="imagenet"):
-
-    if dataset_name == "imagenet":
-        val_dataset = ImageNetDataset(split="validation", transform=transform)
-    elif dataset_name == "pathmnist":
-        val_dataset = PathMNISTDataset(split="validation", transform=transform)
-    else:
-        raise ValueError("Unsupported dataset name")
-
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-
-    return val_loader
+def get_val_dataloader(batch_size=32, transform=None, shuffle=False):
+    dataset = ChestXrayDataset(split="val", transform=transform)
+    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
