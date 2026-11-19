@@ -15,4 +15,4 @@ if __name__ == "__main__":#
     torch.save(model.state_dict(), MODELS_DIR / "resnet50_imagenet.pth")
     ep = torch.export.export(model, args=(torch.randn(1, 3, 224, 224),))
     torch.export.save(ep, MODELS_DIR / "resnet50_imagenet.torchscript.pt2")
-    print(f"ResNet50 model with ImageNet weights saved to {MODELS_DIR / 'resnet50_imagenet.pth'} and EP model saved to {MODELS_DIR / 'resnet50_imagenet.torchscript.pt2'}")
+    print(f"ResNet50 model with ImageNet weights saved to {MODELS_DIR / 'resnet50_imagenet.pth'} and EP model saved to {MODELS_DIR / 'resnet50_imagenet.pt2'}")
