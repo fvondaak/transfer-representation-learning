@@ -54,14 +54,14 @@ class ChestXrayDataset(Dataset):
             image = self.transform(image)
         return image, label
 
-def get_train_dataloader(batch_size=32, transform=None, shuffle=True):
+def get_train_dataloader(batch_size=32, transform=None, shuffle=True, num_workers=0):
     dataset = ChestXrayDataset(split="train", transform=transform)
-    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
-def get_test_dataloader(batch_size=32, transform=None, shuffle=False):
+def get_test_dataloader(batch_size=32, transform=None, shuffle=False, num_workers=0):
     dataset = ChestXrayDataset(split="test", transform=transform)
-    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
-def get_val_dataloader(batch_size=32, transform=None, shuffle=False):
+def get_val_dataloader(batch_size=32, transform=None, shuffle=False, num_workers=0):
     dataset = ChestXrayDataset(split="val", transform=transform)
-    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
