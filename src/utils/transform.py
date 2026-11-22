@@ -1,5 +1,13 @@
+import torch
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms import functional as F
+
+
+def stretch_and_normalize(image):
+    """Stretch a uint8 image to 224 x 224 and apply ImageNet normalization."""
+    image = F.resize(image, [224, 224], antialias=True)
+    image = F.convert_image_dtype(image, torch.float32)
+    return F.normalize(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 
 def resize_and_pad(image):
